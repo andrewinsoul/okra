@@ -98,4 +98,57 @@ export class ExtractData {
       await browser?.close();
     }
   }
+
+  async scrapeCustomerAccountData(authPayload: {
+    emailAddress: string;
+    password: string;
+    otpValue: string;
+  }): Promise<
+    Array<{
+      availableBal: string;
+      ledgerBal: string;
+      accountNumber: string;
+    }>
+  > {
+    let browser, page;
+    try {
+      browser = await Puppeteer.launch();
+      page = await this.automateLogin(browser, constants.URL, authPayload);
+      let accountSectionDivs = await page.$$eval(
+        "div[class='w-full flex-1']",
+        (accountSectionTags: Array<{ textContent: string }>) => {
+          return accountSectionTags.map(
+            (accountSectionTag) => accountSectionTag.textContent,
+          );
+        },
+      );
+      const accountNumberLists = await page.$$eval(
+        "div[class='flex-1 w-full'] > a",
+        (viewAccounts: Array<{ getAttribute: (attr: string) => string }>) => {
+          return viewAccounts.map((viewAccount) =>
+            viewAccount.getAttribute('href'),
+          );
+        },
+      );
+      accountSectionDivs = accountSectionDivs.map(
+        (item: string, index: number) =>
+          `${item} ${accountNumberLists[index].split('-')[1]}`,
+      );
+      const accountStatement = accountSectionDivs.map((item: string) => {
+        return {
+          availableBal: `$${Number(
+            item.split(' ')[2].slice(0, -1),
+          ).toLocaleString()}`,
+          ledgerBal: `$${Number(item.split(' ')[3]).toLocaleString()}`,
+          accountNumber: item.split(' ').slice(-1)[0],
+        };
+      });
+      return accountStatement;
+    } catch (error: any) {
+      throw error;
+    } finally {
+      page && (await this.automateLogout(page));
+      await browser?.close();
+    }
+  }
 }
