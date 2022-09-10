@@ -1,10 +1,23 @@
-import Puppeteer, { Browser, Page } from 'puppeteer';
+import Puppeteer, { Browser, ElementHandle, Page } from 'puppeteer';
 import { constants } from '../constants';
 
 type AuthType = {
   email: string;
   password: string;
 };
+
+interface AccountTransactionType {
+  [key: string]: Array<{
+    type: string;
+    date: string;
+    narration: string;
+    amount: string;
+    beneficiary: string;
+    sender: string;
+    accountNumber: string;
+  }>;
+}
+
 export class ExtractData {
   async automateLogin(
     browser: Browser | undefined,
@@ -148,6 +161,109 @@ export class ExtractData {
       throw error;
     } finally {
       page && (await this.automateLogout(page));
+      await browser?.close();
+    }
+  }
+
+  groupTableDataByRow(rawData: Array<string>): Array<Array<string>> {
+    let dataArray: Array<string> = [];
+    const containerArray: Array<Array<string>> = [];
+    let index = 0;
+    rawData.forEach((item) => {
+      if (index === 6) {
+        containerArray.push(dataArray);
+        dataArray = [];
+        dataArray.push(item);
+        index = 0;
+      } else {
+        dataArray.push(item);
+      }
+      index = index + 1;
+    });
+    containerArray.push(dataArray);
+    return containerArray;
+  }
+
+  async extractTablePaginatedData(page: Page): Promise<any> {
+    try {
+      const trTagsArrays = await page.$$eval(
+        'tbody > tr > td, tbody > tr > th',
+        (trTags: Array<{ innerHTML: string }>) => {
+          return trTags.map((trTag) => `${trTag.innerHTML} `);
+        },
+      );
+      const formattedData = this.groupTableDataByRow(trTagsArrays);
+      return formattedData;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async scrapeCustomerAccountTransactions(authPayload: {
+    emailAddress: string;
+    password: string;
+    otpValue: string;
+  }): Promise<AccountTransactionType> {
+    let browser, page;
+    try {
+      browser = await Puppeteer.launch();
+      page = await this.automateLogin(browser, constants.URL, authPayload);
+      const viewAccountBtns: Array<ElementHandle> = await page.$x(
+        "//a[contains(text(), 'View Account')]",
+      );
+      const numberOfCustomerAccounts = viewAccountBtns.length;
+      const accountTransactionData: AccountTransactionType = {};
+      const nextBtn = await page.$x("//button[contains(text(), 'Next')]");
+      for (let i = 0; i < numberOfCustomerAccounts; i++) {
+        const currentAccount = viewAccountBtns[i];
+        let currentOffset: number;
+        await Promise.all([
+          currentAccount.click(),
+          page?.waitForNavigation({ waitUntil: ['networkidle2'] }),
+        ]);
+        await page?.waitForSelector('table');
+        let spanPaginationsDataArray = await page.$$eval(
+          "span[class='font-semibold text-gray-900 dark:text-white']",
+          (spanTags: Array<{ textContent: string }>) => {
+            return spanTags.map((spanTag) => spanTag.textContent);
+          },
+        );
+        const limit: number = +spanPaginationsDataArray[2].trim();
+        do {
+          spanPaginationsDataArray = await page.$$eval(
+            "span[class='font-semibold text-gray-900 dark:text-white']",
+            (spanTags: Array<{ textContent: string }>) => {
+              return spanTags.map((spanTag) => spanTag.textContent);
+            },
+          );
+          currentOffset = +spanPaginationsDataArray[1].trim();
+          const formattedData = await this.extractTablePaginatedData(page);
+          const accountNumber =
+            formattedData[0][0].trim() === 'debit'
+              ? formattedData[0][5]
+              : formattedData[0][4];
+          accountTransactionData[accountNumber] = [
+            ...(accountTransactionData[accountNumber] || []),
+            ...formattedData.map((item: Array<string>) => ({
+              type: item[0].trim(),
+              date: item[1],
+              narration: item[2],
+              amount: item[3],
+              beneficiary: item[4],
+              sender: item[5],
+            })),
+          ];
+          await nextBtn[0].click();
+          await page?.waitForSelector('tbody');
+        } while (currentOffset !== limit);
+        await page?.goBack({ waitUntil: 'networkidle0' });
+        await page?.waitForSelector("h1[class*='text-2xl']");
+      }
+      return accountTransactionData;
+    } catch (error: any) {
+      throw error;
+    } finally {
+      await page?.this.automateLogout(page);
       await browser?.close();
     }
   }
