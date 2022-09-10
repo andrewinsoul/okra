@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CustomerModule } from './customer/customer.module';
 import { AccountModule } from './account/account.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { AppController } from './app.controller';
 
 const envFilePath = path.join(__dirname, '..', '/.env');
 
@@ -18,5 +19,6 @@ const envFilePath = path.join(__dirname, '..', '/.env');
     AccountModule,
     TransactionModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
