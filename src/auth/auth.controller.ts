@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  InternalServerErrorException,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 
@@ -19,7 +14,7 @@ export class AuthController {
         .status(200)
         .json({ message: 'auth information saved', status: 200 });
     } catch (error) {
-      throw new InternalServerErrorException(error);
+      return res.status(500).json({ error: error.message, status: 500 });
     }
   }
 }
