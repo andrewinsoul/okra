@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { AndrewCustomer, CustomerDocument } from './customer.schema';
 import { AndrewAuth, AuthDocument } from '../auth/auth.schema';
 import { ExtractData } from 'src/utils/extractData';
+import { queryDataUtil } from 'src/utils/queryData';
 
 @Injectable()
 export class CustomerService {
@@ -19,6 +20,8 @@ export class CustomerService {
   ) {}
   async saveCustomerInfo(): Promise<any> {
     try {
+      const isPopulated = await queryDataUtil(this.customerModel);
+      if (isPopulated) return;
       const authData = await this.authModel.findOne({
         email: this.config.get('USER_EMAIL') || '',
       });

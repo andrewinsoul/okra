@@ -4,6 +4,7 @@ import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { AndrewAuth, AuthDocument } from './auth.schema';
+import { queryDataUtil } from 'src/utils/queryData';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,8 @@ export class AuthService {
 
   async extractAndSaveAuthInfo(): Promise<any> {
     try {
+      const isPopulated = await queryDataUtil(this.authModel);
+      if (isPopulated) return;
       const authInfo = new this.authModel({
         email: this.config.get('USER_EMAIL') || '',
         password: this.config.get('USER_PASSWORD') || '',

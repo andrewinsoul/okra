@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { AndrewTransaction, TransactionDocument } from './transaction.schema';
 import { AndrewAccount, AccountDocument } from '../account/account.schema';
 import { ExtractData } from 'src/utils/extractData';
+import { queryDataUtil } from 'src/utils/queryData';
 
 @Injectable()
 export class TransactionService {
@@ -19,6 +20,8 @@ export class TransactionService {
   ) {}
   async saveTransactionInfo() {
     try {
+      const isPopulated = await queryDataUtil(this.transactionModel);
+      if (isPopulated) return;
       const authPayload = {
         emailAddress: this.config.get('USER_EMAIL') || '',
         password: this.config.get('USER_PASSWORD') || '',

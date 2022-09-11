@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { AndrewAccount, AccountDocument } from './account.schema';
 import { AndrewCustomer, CustomerDocument } from '../customer/customer.schema';
 import { ExtractData } from 'src/utils/extractData';
+import { queryDataUtil } from 'src/utils/queryData';
 
 @Injectable()
 export class AccountService {
@@ -18,6 +19,8 @@ export class AccountService {
   ) {}
   async saveAccountInfo(): Promise<void> {
     try {
+      const isPopulated = await queryDataUtil(this.accountModel);
+      if (isPopulated) return;
       const customerData = await this.customerModel.findOne({
         email: this.config.get('USER_EMAIL') || '',
       });
