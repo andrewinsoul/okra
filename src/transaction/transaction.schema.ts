@@ -25,8 +25,8 @@ export class AndrewTransaction {
   sender: string;
 
   @Prop({
-    type: mongooseSchema.Types.String,
-    ref: 'AndrewAccount.accountNumber',
+    type: mongooseSchema.Types.ObjectId,
+    ref: 'AndrewAccount',
   })
   account: AndrewAccount;
 }

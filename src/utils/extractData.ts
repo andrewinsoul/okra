@@ -1,11 +1,6 @@
 import Puppeteer, { Browser, ElementHandle, Page } from 'puppeteer';
 import { constants } from '../constants';
 
-type AuthType = {
-  email: string;
-  password: string;
-};
-
 interface AccountTransactionType {
   [key: string]: Array<{
     type: string;
@@ -199,14 +194,24 @@ export class ExtractData {
     }
   }
 
-  async scrapeCustomerAccountTransactions(authPayload: {
+  async *scrapeCustomerAccountTransactions(authPayload: {
     emailAddress: string;
     password: string;
     otpValue: string;
-  }): Promise<AccountTransactionType> {
+  }): AsyncGenerator<
+    Array<{
+      type: string;
+      date: string;
+      narration: string;
+      amount: string;
+      beneficiary: string;
+      sender: string;
+      accountNumber: string;
+    }>
+  > {
     let browser, page;
     try {
-      browser = await Puppeteer.launch();
+      browser = await Puppeteer.launch({ headless: false });
       page = await this.automateLogin(browser, constants.URL, authPayload);
       const viewAccountBtns: Array<ElementHandle> = await page.$x(
         "//a[contains(text(), 'View Account')]",
@@ -242,28 +247,30 @@ export class ExtractData {
             formattedData[0][0].trim() === 'debit'
               ? formattedData[0][5]
               : formattedData[0][4];
-          accountTransactionData[accountNumber] = [
-            ...(accountTransactionData[accountNumber] || []),
-            ...formattedData.map((item: Array<string>) => ({
+          const accountTransactionData = formattedData.map(
+            (item: Array<string>) => ({
               type: item[0].trim(),
-              date: item[1],
+              clearedDate: item[1],
               narration: item[2],
               amount: item[3],
               beneficiary: item[4],
               sender: item[5],
-            })),
-          ];
+              accountNumber,
+            }),
+          );
           await nextBtn[0].click();
           await page?.waitForSelector('tbody');
+          yield accountTransactionData;
         } while (currentOffset !== limit);
-        await page?.goBack({ waitUntil: 'networkidle0' });
+        await page?.goBack({ waitUntil: ['networkidle0'] });
+        await page?.waitForNavigation({ waitUntil: ['networkidle0'] });
         await page?.waitForSelector("h1[class*='text-2xl']");
       }
       return accountTransactionData;
     } catch (error: any) {
       throw error;
     } finally {
-      await page?.this.automateLogout(page);
+      page && (await this.automateLogout(page));
       await browser?.close();
     }
   }

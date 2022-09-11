@@ -15,7 +15,7 @@ export class AndrewAccount {
   @Prop()
   accountNumber: string;
 
-  @Prop({ type: mongooseSchema.Types.ObjectId, ref: 'Customer' })
+  @Prop({ type: mongooseSchema.Types.ObjectId, ref: 'AndrewCustomer' })
   customer: AndrewCustomer;
 }
 
