@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Inject } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Transaction, TransactionDocument } from './transaction.schema';
+import { AndrewTransaction, TransactionDocument } from './transaction.schema';
 import { ExtractData } from 'src/utils/extractData';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class TransactionService {
   @Inject(ConfigService)
   public config: ConfigService;
   constructor(
-    @InjectModel(Transaction.name)
+    @InjectModel(AndrewTransaction.name)
     private readonly transactionModel: Model<TransactionDocument>,
   ) {}
   async saveTransactionInfo(): Promise<void> {

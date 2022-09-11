@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as mongooseSchema } from 'mongoose';
-import { Account } from '../account/account.schema';
+import { AndrewAccount } from '../account/account.schema';
 
-export type TransactionDocument = Transaction & Document;
+export type TransactionDocument = AndrewTransaction & Document;
 
 @Schema({ timestamps: true })
-export class Transaction {
+export class AndrewTransaction {
   @Prop()
   type: string;
 
@@ -24,8 +24,12 @@ export class Transaction {
   @Prop()
   sender: string;
 
-  @Prop({ type: mongooseSchema.Types.String, ref: 'Account.accountNumber' })
-  account: Account;
+  @Prop({
+    type: mongooseSchema.Types.String,
+    ref: 'AndrewAccount.accountNumber',
+  })
+  account: AndrewAccount;
 }
 
-export const TransactionSchema = SchemaFactory.createForClass(Transaction);
+export const TransactionSchema =
+  SchemaFactory.createForClass(AndrewTransaction);

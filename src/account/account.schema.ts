@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as mongooseSchema } from 'mongoose';
-import { Customer } from '../customer/customer.schema';
+import { AndrewCustomer } from '../customer/customer.schema';
 
-export type AccountDocument = Account & Document;
+export type AccountDocument = AndrewAccount & Document;
 
 @Schema({ timestamps: true })
-export class Account {
+export class AndrewAccount {
   @Prop()
   availableBalance: string;
 
@@ -16,7 +16,7 @@ export class Account {
   accountNumber: string;
 
   @Prop({ type: mongooseSchema.Types.ObjectId, ref: 'Customer' })
-  customer: Customer;
+  customer: AndrewCustomer;
 }
 
-export const AccountSchema = SchemaFactory.createForClass(Account);
+export const AccountSchema = SchemaFactory.createForClass(AndrewAccount);

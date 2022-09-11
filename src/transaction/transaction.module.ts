@@ -1,19 +1,19 @@
 import { Module } from '@nestjs/common';
 import { TransactionController } from './transaction.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Account, AccountSchema } from '../account/account.schema';
-import { Transaction, TransactionSchema } from './transaction.schema';
+import { AndrewAccount, AccountSchema } from '../account/account.schema';
+import { AndrewTransaction, TransactionSchema } from './transaction.schema';
 import { TransactionService } from './transaction.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       {
-        name: Transaction.name,
+        name: AndrewTransaction.name,
         schema: TransactionSchema,
       },
       {
-        name: Account.name,
+        name: AndrewAccount.name,
         schema: AccountSchema,
       },
     ]),
