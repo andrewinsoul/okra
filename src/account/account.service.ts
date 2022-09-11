@@ -2,8 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Account, AccountDocument } from './account.schema';
-import { Customer, CustomerDocument } from '../customer/customer.schema';
+import { AndrewAccount, AccountDocument } from './account.schema';
+import { AndrewCustomer, CustomerDocument } from '../customer/customer.schema';
 import { ExtractData } from 'src/utils/extractData';
 
 @Injectable()
@@ -11,9 +11,9 @@ export class AccountService {
   @Inject(ConfigService)
   public config: ConfigService;
   constructor(
-    @InjectModel(Customer.name)
+    @InjectModel(AndrewCustomer.name)
     private readonly customerModel: Model<CustomerDocument>,
-    @InjectModel(Account.name)
+    @InjectModel(AndrewAccount.name)
     private readonly accountModel: Model<AccountDocument>,
   ) {}
   async saveAccountInfo(): Promise<void> {

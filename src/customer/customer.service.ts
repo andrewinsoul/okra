@@ -3,8 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Inject } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Customer, CustomerDocument } from './customer.schema';
-import { Auth, AuthDocument } from '../auth/auth.schema';
+import { AndrewCustomer, CustomerDocument } from './customer.schema';
+import { AndrewAuth, AuthDocument } from '../auth/auth.schema';
 import { ExtractData } from 'src/utils/extractData';
 
 @Injectable()
@@ -12,9 +12,10 @@ export class CustomerService {
   @Inject(ConfigService)
   public config: ConfigService;
   constructor(
-    @InjectModel(Customer.name)
+    @InjectModel(AndrewCustomer.name)
     private readonly customerModel: Model<CustomerDocument>,
-    @InjectModel(Auth.name) private readonly authModel: Model<AuthDocument>,
+    @InjectModel(AndrewAuth.name)
+    private readonly authModel: Model<AuthDocument>,
   ) {}
   async saveCustomerInfo(): Promise<any> {
     try {

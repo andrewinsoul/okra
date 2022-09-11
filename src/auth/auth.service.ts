@@ -3,14 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
-import { Auth, AuthDocument } from './auth.schema';
+import { AndrewAuth, AuthDocument } from './auth.schema';
 
 @Injectable()
 export class AuthService {
   @Inject(ConfigService)
   public config: ConfigService;
   constructor(
-    @InjectModel(Auth.name) private readonly authModel: Model<AuthDocument>,
+    @InjectModel(AndrewAuth.name)
+    private readonly authModel: Model<AuthDocument>,
   ) {}
 
   async extractAndSaveAuthInfo(): Promise<any> {
