@@ -4,6 +4,7 @@ import { Inject } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { AndrewTransaction, TransactionDocument } from './transaction.schema';
+import { AndrewAccount, AccountDocument } from '../account/account.schema';
 import { ExtractData } from 'src/utils/extractData';
 
 @Injectable()
@@ -13,39 +14,26 @@ export class TransactionService {
   constructor(
     @InjectModel(AndrewTransaction.name)
     private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(AndrewAccount.name)
+    private readonly accountModel: Model<AccountDocument>,
   ) {}
-  async saveTransactionInfo(): Promise<void> {
+  async saveTransactionInfo() {
     try {
       const authPayload = {
         emailAddress: this.config.get('USER_EMAIL') || '',
         password: this.config.get('USER_PASSWORD') || '',
         otpValue: this.config.get('OTP') || '',
       };
-      const transactionData =
-        await new ExtractData().scrapeCustomerAccountTransactions(authPayload);
-      const data: Array<{
-        type: string;
-        clearedDate: string;
-        narration: string;
-        amount: string;
-        beneficiary: string;
-        sender: string;
-        accountNumber: string;
-      }> = [];
-      Object.keys(transactionData).forEach((accountNumber) =>
-        transactionData[accountNumber].forEach((transaction) => {
-          data.push({
-            type: transaction.type,
-            clearedDate: transaction.date,
-            narration: transaction.narration,
-            amount: transaction.amount,
-            beneficiary: transaction.beneficiary,
-            sender: transaction.sender,
-            accountNumber: transaction.accountNumber,
-          });
-        }),
-      );
-      await this.transactionModel.create(data);
+      const transactionIterator =
+        new ExtractData().scrapeCustomerAccountTransactions(authPayload);
+      for await (const data of transactionIterator) {
+        const account = await this.accountModel.findOne({
+          accountNumber: data[0].accountNumber.trim(),
+        });
+        await this.transactionModel.create(
+          data.map((item) => ({ ...item, account: account?.id })),
+        );
+      }
     } catch (error) {
       throw error;
     }
