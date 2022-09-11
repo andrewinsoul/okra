@@ -213,7 +213,6 @@ export class ExtractData {
       );
       const numberOfCustomerAccounts = viewAccountBtns.length;
       const accountTransactionData: AccountTransactionType = {};
-      const nextBtn = await page.$x("//button[contains(text(), 'Next')]");
       for (let i = 0; i < numberOfCustomerAccounts; i++) {
         const currentAccount = viewAccountBtns[i];
         let currentOffset: number;
@@ -222,6 +221,7 @@ export class ExtractData {
           page?.waitForNavigation({ waitUntil: ['networkidle2'] }),
         ]);
         await page?.waitForSelector('table');
+        const nextBtn = await page.$x("//button[contains(text(), 'Next')]");
         let spanPaginationsDataArray = await page.$$eval(
           "span[class='font-semibold text-gray-900 dark:text-white']",
           (spanTags: Array<{ textContent: string }>) => {
