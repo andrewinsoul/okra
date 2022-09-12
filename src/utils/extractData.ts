@@ -211,7 +211,7 @@ export class ExtractData {
   > {
     let browser, page;
     try {
-      browser = await Puppeteer.launch({ headless: false });
+      browser = await Puppeteer.launch();
       page = await this.automateLogin(browser, constants.URL, authPayload);
       const viewAccountBtns: Array<ElementHandle> = await page.$x(
         "//a[contains(text(), 'View Account')]",
