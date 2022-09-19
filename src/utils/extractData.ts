@@ -33,12 +33,9 @@ export class ExtractData {
       password: string;
       otpValue: string;
     },
-    nodeEnv: string,
   ): Promise<[Page, Browser]> {
     try {
-      const browser = await Puppeteer.launch({
-        headless: nodeEnv === 'production' ? false : true,
-      });
+      const browser = await Puppeteer.launch();
       const page = await browser?.newPage();
       page?.on('dialog', async (dialog: { accept: () => void }) => {
         await dialog.accept();

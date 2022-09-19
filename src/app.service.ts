@@ -33,15 +33,11 @@ export class AppService {
     let page, browser;
     const ScrapeDataInstance = new ExtractData();
     try {
-      [page, browser] = await ScrapeDataInstance.automateLogin(
-        constants.URL,
-        {
-          emailAddress: createAuthDTO.email,
-          password: createAuthDTO.password,
-          otpValue: '12345',
-        },
-        this.config.get('NODE_ENV') || 'development',
-      );
+      [page, browser] = await ScrapeDataInstance.automateLogin(constants.URL, {
+        emailAddress: createAuthDTO.email,
+        password: createAuthDTO.password,
+        otpValue: '12345',
+      });
       const customerInfo = await ScrapeDataInstance.scrapeCustomerInfo(page);
       const accounts = await ScrapeDataInstance.scrapeCustomerAccountData(page);
       const {
