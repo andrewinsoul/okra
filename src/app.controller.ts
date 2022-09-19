@@ -7,7 +7,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
   @Get('/ping')
   scrapeCustomerInfo(@Res() res: Response) {
-    return res.status(200).json({ message: 'WELOME ONBOARD!!', status: 200 });
+    return res.status(200).json({ message: 'WELOME ONBOARD!', status: 200 });
   }
 
   @Post('/scrape')
