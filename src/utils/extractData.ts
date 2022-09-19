@@ -1,5 +1,4 @@
-import Puppeteer, { Browser, ElementHandle, Page } from 'puppeteer';
-import { constants } from '../constants';
+import Puppeteer, { Browser, Page } from 'puppeteer';
 
 interface AccountTransactionType {
   [key: string]: Array<{
@@ -13,17 +12,30 @@ interface AccountTransactionType {
   }>;
 }
 
+const isAuthWrong = async (page: Page): Promise<boolean> => {
+  try {
+    const authErrorMsg = await page.$eval(
+      "span[class*='text-red-500']",
+      (error: { innerHTML: string }) => error.innerHTML,
+    );
+    if (authErrorMsg) return true;
+    return false;
+  } catch (_) {
+    return false;
+  }
+};
+
 export class ExtractData {
   async automateLogin(
-    browser: Browser | undefined,
     url: string,
     authPayload: {
       emailAddress: string;
       password: string;
       otpValue: string;
     },
-  ): Promise<any> {
+  ): Promise<[Page, Browser]> {
     try {
+      const browser = await Puppeteer.launch({ headless: false });
       const page = await browser?.newPage();
       page?.on('dialog', async (dialog: { accept: () => void }) => {
         await dialog.accept();
@@ -37,8 +49,12 @@ export class ExtractData {
       await page?.type('input#password', password);
       await Promise.all([
         page?.click('button[type="submit"]'),
-        page?.waitForNavigation({ waitUntil: ['networkidle2'] }),
+        page?.waitForTimeout(10000),
       ]);
+      const authErrorMsg = await isAuthWrong(page);
+      if (authErrorMsg) {
+        throw { code: 'AUTH_ERROR' };
+      }
       await page?.waitForSelector('label[for="otp"]');
       await page?.type('input#otp', otpValue);
       await Promise.all([
@@ -46,44 +62,39 @@ export class ExtractData {
         page?.waitForNavigation({ waitUntil: ['networkidle2'] }),
       ]);
       await page?.waitForSelector("h1[class*='text-2xl']");
-      return page;
+      return [page, browser];
     } catch (error) {
       throw error;
     }
   }
 
-  async automateLogout(page: any) {
+  async automateLogout(page: Page) {
     try {
-      const signOutLink = await page.$x("//a[contains(text(), 'Sign out')]");
+      const signOutLink: Array<any> = await page.$x(
+        "//a[contains(text(), 'Sign out')]",
+      );
       signOutLink ? await signOutLink[0].click() : undefined;
     } catch (error: any) {
       throw error;
     }
   }
 
-  async scrapeCustomerInfo(authPayload: {
-    emailAddress: string;
-    password: string;
-    otpValue: string;
-  }): Promise<{
+  async scrapeCustomerInfo(page: Page): Promise<{
     clientName: string;
     clientAddress: string;
     clientBVN: string;
     clientPhone: string;
     clientEmail: string;
   }> {
-    let browser, page;
     try {
-      browser = await Puppeteer.launch();
-      page = await this.automateLogin(browser, constants.URL, authPayload);
       const welcomeMsg = await page.$eval(
         "h1[class*='text-2xl']",
         (name: { innerHTML: string }) => name.innerHTML,
       );
       const pTagsArrays = await page.$$eval(
         "p[class='text-default my-3']",
-        (pTags: Array<{ textContent: string }>) => {
-          return pTags.map((pTag) => pTag.textContent);
+        (pTags: Array<any>) => {
+          return pTags.map((pTag: { textContent: string }) => pTag.textContent);
         },
       );
       const clientInfo = pTagsArrays.map((item: string) =>
@@ -101,30 +112,20 @@ export class ExtractData {
       };
     } catch (error: any) {
       throw error;
-    } finally {
-      page && (await this.automateLogout(page));
-      await browser?.close();
     }
   }
 
-  async scrapeCustomerAccountData(authPayload: {
-    emailAddress: string;
-    password: string;
-    otpValue: string;
-  }): Promise<
+  async scrapeCustomerAccountData(page: Page): Promise<
     Array<{
       availableBal: string;
       ledgerBal: string;
       accountNumber: string;
     }>
   > {
-    let browser, page;
     try {
-      browser = await Puppeteer.launch();
-      page = await this.automateLogin(browser, constants.URL, authPayload);
       let accountSectionDivs = await page.$$eval(
         "div[class='w-full flex-1']",
-        (accountSectionTags: Array<{ textContent: string }>) => {
+        (accountSectionTags: Array<any>) => {
           return accountSectionTags.map(
             (accountSectionTag) => accountSectionTag.textContent,
           );
@@ -132,7 +133,7 @@ export class ExtractData {
       );
       const accountNumberLists = await page.$$eval(
         "div[class='flex-1 w-full'] > a",
-        (viewAccounts: Array<{ getAttribute: (attr: string) => string }>) => {
+        (viewAccounts: Array<any>) => {
           return viewAccounts.map((viewAccount) =>
             viewAccount.getAttribute('href'),
           );
@@ -154,9 +155,6 @@ export class ExtractData {
       return accountStatement;
     } catch (error: any) {
       throw error;
-    } finally {
-      page && (await this.automateLogout(page));
-      await browser?.close();
     }
   }
 
@@ -194,11 +192,7 @@ export class ExtractData {
     }
   }
 
-  async *scrapeCustomerAccountTransactions(authPayload: {
-    emailAddress: string;
-    password: string;
-    otpValue: string;
-  }): AsyncGenerator<
+  async *scrapeCustomerAccountTransactions(page: Page): AsyncGenerator<
     Array<{
       type: string;
       date: string;
@@ -209,27 +203,29 @@ export class ExtractData {
       accountNumber: string;
     }>
   > {
-    let browser, page;
     try {
-      browser = await Puppeteer.launch();
-      page = await this.automateLogin(browser, constants.URL, authPayload);
-      const viewAccountBtns: Array<ElementHandle> = await page.$x(
+      const viewAccountBtns: Array<any> = await page.$x(
         "//a[contains(text(), 'View Account')]",
       );
       const numberOfCustomerAccounts = viewAccountBtns.length;
       const accountTransactionData: AccountTransactionType = {};
       for (let i = 0; i < numberOfCustomerAccounts; i++) {
-        const currentAccount = viewAccountBtns[i];
         let currentOffset: number;
+        const viewAccountBtns: Array<any> = await page.$x(
+          "//a[contains(text(), 'View Account')]",
+        );
+        const accountLinks = viewAccountBtns[i];
         await Promise.all([
-          currentAccount.click(),
+          accountLinks.click(),
           page?.waitForNavigation({ waitUntil: ['networkidle2'] }),
         ]);
         await page?.waitForSelector('table');
-        const nextBtn = await page.$x("//button[contains(text(), 'Next')]");
-        let spanPaginationsDataArray = await page.$$eval(
+        const nextBtn: Array<any> = await page.$x(
+          "//button[contains(text(), 'Next')]",
+        );
+        let spanPaginationsDataArray: Array<any> = await page.$$eval(
           "span[class='font-semibold text-gray-900 dark:text-white']",
-          (spanTags: Array<{ textContent: string }>) => {
+          (spanTags: Array<any>) => {
             return spanTags.map((spanTag) => spanTag.textContent);
           },
         );
@@ -237,7 +233,7 @@ export class ExtractData {
         do {
           spanPaginationsDataArray = await page.$$eval(
             "span[class='font-semibold text-gray-900 dark:text-white']",
-            (spanTags: Array<{ textContent: string }>) => {
+            (spanTags: Array<any>) => {
               return spanTags.map((spanTag) => spanTag.textContent);
             },
           );
@@ -262,16 +258,15 @@ export class ExtractData {
           await page?.waitForSelector('tbody');
           yield accountTransactionData;
         } while (currentOffset !== limit);
-        await page?.goBack({ waitUntil: ['networkidle0'] });
-        await page?.waitForNavigation({ waitUntil: ['networkidle0'] });
-        await page?.waitForSelector("h1[class*='text-2xl']");
+        await Promise.all([
+          page?.goBack({ waitUntil: ['networkidle0'] }),
+          page?.waitForNavigation({ waitUntil: ['networkidle0'] }),
+        ]);
+        await page?.waitForTimeout(10000);
       }
       return accountTransactionData;
     } catch (error: any) {
       throw error;
-    } finally {
-      page && (await this.automateLogout(page));
-      await browser?.close();
     }
   }
 }

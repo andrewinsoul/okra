@@ -40,33 +40,25 @@ $ npm run start:prod
     <th>HTTP VERB</th>
     <th>ENDPOINT</th>
     <th>FUNCTIONALITY</th>
+    <th>PAYLOAD</th>
   </tr>
   <tr>
     <td>GET</td> 
     <td>/v1/ping</td>  
     <td>Ensures the server is working without making any api call that calls the database</td>
+    <td>N/A</td>
   </tr>
 
   <tr>
-    <td>GET</td> 
-    <td>/v1/auth</td>  
-    <td>Scrapes auth information and saves to database</td>
-  </tr>
-  <tr>
-    <td>GET</td> 
-    <td>/v1/customer</td>  
-    <td>Scrapes customer information and saves to database</td>
-  </tr>
-
-  <tr>
-    <td>GET</td> 
-    <td>/v1/account</td>  
-    <td>Scrapes account information and saves to database</td>
-  </tr>
-  <tr>
-    <td>GET</td> 
-    <td>/v1/transaction</td>  
-    <td>Scrapes transaction information and saves to database</td>
+    <td>POST</td> 
+    <td>/v1/scrape</td>  
+    <td>Scrapes user account information and saves into the database</td>
+    <td>
+    {
+      email: '',
+      password: ''
+      }
+    </td>
   </tr>
 </table>
 
