@@ -37,7 +37,7 @@ export class ExtractData {
   ): Promise<[Page, Browser]> {
     try {
       const browser = await Puppeteer.launch({
-        headless: nodeEnv === 'production' ? true : false,
+        headless: nodeEnv === 'production' ? false : true,
       });
       const page = await browser?.newPage();
       page?.on('dialog', async (dialog: { accept: () => void }) => {
