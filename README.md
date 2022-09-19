@@ -14,7 +14,7 @@
 
 - cd into okra folder
 
-- Create a .env file that matches with the template of .env.sample (The value of the USER_EMAIL & USER_PASSWORD should be the value of the credentials you used to signup in the first step. The value of OTP should be 12345)
+- Create a .env file that matches with the template of .env.sample
 
 - run npm install to install dependencies
 
